@@ -1,0 +1,11 @@
+{% extends 'index.html' %}
+{% block content %}
+<div class="col">
+    <h1>Success welcome, {{user.first_name}} !</h1>
+    <h2>successfuly registered or logged in </h2>
+</div>
+<div class="col">
+    <a href="/logout/{{user.id}}"> Logout</a>
+</div>
+
+{% endblock %}
