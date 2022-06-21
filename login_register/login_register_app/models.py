@@ -1,7 +1,8 @@
-import email
 from django.db import models
 import re
 import bcrypt
+from datetime import datetime
+import time
 # Create your models here.
 
 class UserManager (models.Manager):
@@ -14,15 +15,29 @@ class UserManager (models.Manager):
         if len(post['last']) < 2:
             errors['last_name'] = "First Name should be at least 2 characters"
         
-        #checking first password:
+        #checking password:
         if len(post['pw']) < 8:
             errors['pw'] = "Password should be at least 8 characters"
         if post['pw'] != post['pw2']:
             errors['pw_match'] = "Passwords don't match "
+
+        #checking dates:
+        if not(post['birthday']):
+            errors['birthday'] = 'Birthday Date should be inserted'
+        else:
+            presentStr = datetime.now().strftime("%Y-%m-%d") #returns string which is not compareable
+            present =  time.strptime(presentStr ,"%Y-%m-%d") # convert it to date type.
+            birthday = time.strptime(post['birthday'] ,"%Y-%m-%d") #convert user birthday date input to match the present date.
+            print('--'*50,present)
+            age = present.tm_year - birthday.tm_year
+            if not(birthday < present):
+                errors['birthday'] = 'Birthday Date should be in the past'
+            if((age) < 13):
+                errors['birthdaty'] = 'You should be 13 years or older to get access'
         
         #checking email:
         EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
-        if not EMAIL_REGEX.match(post['email']):
+        if not EMAIL_REGEX.match(post['email']): 
             errors['email'] = "Invalid email address!"
         elif (User.objects.filter(email=post['email'])):
             errors['identical']= 'Email already exist..' 
@@ -38,6 +53,7 @@ class UserManager (models.Manager):
             errors ['email'] = 'Email is not correct'
         elif not(bcrypt.checkpw(post['pw'].encode(), user[0].password.encode())):
             errors ['pw'] = 'Not correct password'
+        print('--'*50,'Finish Errors')
         return errors
 
 
@@ -46,4 +62,5 @@ class User (models.Model):
     last_name = models.CharField(max_length=50,blank=False,null=False)
     email = models.EmailField(blank=False,null=False)
     password = models.CharField(max_length=50,blank=False,null=False)
+    birthday = models.DateField(blank=False,null=False)
     objects = UserManager()

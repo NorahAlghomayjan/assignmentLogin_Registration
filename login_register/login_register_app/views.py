@@ -1,3 +1,4 @@
+from logging import exception
 from django.shortcuts import render,HttpResponse,redirect
 from .models import User 
 from django.contrib import messages
@@ -24,15 +25,16 @@ def register(request):
     user_last = request.POST.get('last')
     user_email = request.POST.get('email')
     user_pw = request.POST.get('pw')
+    birthday = request.POST.get('birthday')
 
     #hashing pasword..
     pw_hash = bcrypt.hashpw(user_pw.encode(), bcrypt.gensalt()).decode()
     
 
     #create new user..
-    User.objects.create(first_name=user_first,last_name=user_last,email=user_email,password=pw_hash)
+    User.objects.create(first_name=user_first,last_name=user_last,email=user_email,password=pw_hash,birthday=birthday)
     id = User.objects.last().id
-    return redirect(f'/success/{id}')
+    return redirect(f'/saveUser/{id}')
 
 def login(request):
     #checking if the request is post.
@@ -49,14 +51,22 @@ def login(request):
     #fetching for the id to redirect user to success page.
     id = User.objects.filter(email = request.POST['email'])[0].id
 
-    return redirect(f'/success/{id}')
+    return redirect(f'/saveUser/{id}')
 
-
-
-def success(request,id):
-    user = User.objects.get(id=id)
+def saveUser(request,id):
     #keeping user logged in
     request.session['userId'] = id
+    return redirect('/success')
+
+def success(request):
+    
+    try:
+        id = request.session['userId']   
+    except:
+        messages.error(request, "Need to login first", 'alert alert-danger')
+        return render(request,'success.html')
+    
+    user = User.objects.get(id=id)
     context = {
         'user' : user
     }
